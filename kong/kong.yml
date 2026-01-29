@@ -6,6 +6,9 @@ _transform: true
 ###
 consumers:
   - username: DASHBOARD
+  - username: mcp
+    keyauth_credentials:
+      - key: $MCP_API_KEY
   - username: anon
     keyauth_credentials:
       - key: $SUPABASE_ANON_KEY
@@ -253,6 +256,21 @@ services:
           hide_groups_header: true
           allow:
             - admin
+
+  ## MCP routes
+  - name: mcp
+    _comment: 'MCP: /mcp -> http://studio:3000/api/mcp'
+    url: http://$STUDIO_HOST:3000/api/mcp
+    routes:
+      - name: mcp
+        strip_path: true
+        paths:
+          - /mcp
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
 
   ## Protected Dashboard - catch all remaining routes
   - name: dashboard
