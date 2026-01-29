@@ -173,9 +173,53 @@ services:
             - admin
             - anon
   ## Storage routes: the storage server manages its own auth
+  # NOTE: When Studio is exposed via the same public Kong hostname,
+  # browsers may attach `Authorization: Basic ...` to XHR requests,
+  # which Storage interprets as a JWT and fails with `Invalid Compact JWS`.
+  # These routes validate Basic at Kong, then overwrite upstream auth using the service key.
+  - name: storage-v1-bucket
+    _comment: 'Storage: /storage/v1/bucket* -> http://storage:5000/bucket* (Studio/admin)'
+    url: http://$STORAGE_HOST:5000/bucket
+    routes:
+      - name: storage-v1-bucket
+        strip_path: true
+        paths:
+          - /storage/v1/bucket
+    plugins:
+      - name: cors
+      - name: basic-auth
+        config:
+          hide_credentials: true
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "apikey:$SUPABASE_SERVICE_KEY"
+              - "authorization: Bearer $SUPABASE_SERVICE_KEY"
+
+  - name: storage-v1-object
+    _comment: 'Storage: /storage/v1/object* -> http://storage:5000/object* (Studio/admin)'
+    url: http://$STORAGE_HOST:5000/object
+    routes:
+      - name: storage-v1-object
+        strip_path: true
+        paths:
+          - /storage/v1/object
+    plugins:
+      - name: cors
+      - name: basic-auth
+        config:
+          hide_credentials: true
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "apikey:$SUPABASE_SERVICE_KEY"
+              - "authorization: Bearer $SUPABASE_SERVICE_KEY"
+
   - name: storage-v1-upload-resumable
-    _comment: 'Storage: handle Studio TUS uploads without leaking Basic auth'
-    url: http://$STORAGE_HOST:5000/
+    _comment: 'Storage: /storage/v1/upload/resumable* -> http://storage:5000/upload/resumable* (Studio/admin)'
+    url: http://$STORAGE_HOST:5000/upload/resumable
     routes:
       - name: storage-v1-upload-resumable
         strip_path: true
@@ -190,8 +234,8 @@ services:
         config:
           add:
             headers:
-              - apikey: $SUPABASE_SERVICE_KEY
-              - authorization: Bearer $SUPABASE_SERVICE_KEY
+              - "apikey:$SUPABASE_SERVICE_KEY"
+              - "authorization: Bearer $SUPABASE_SERVICE_KEY"
 
   - name: storage-v1
     _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
