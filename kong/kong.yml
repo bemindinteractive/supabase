@@ -183,6 +183,11 @@ services:
           - /storage/v1/
     plugins:
       - name: cors
+      - name: request-transformer
+        config:
+          remove:
+            headers:
+              - authorization
 
   # ## Edge Functions routes
   # - name: functions-v1
