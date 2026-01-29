@@ -173,6 +173,26 @@ services:
             - admin
             - anon
   ## Storage routes: the storage server manages its own auth
+  - name: storage-v1-upload-resumable
+    _comment: 'Storage: handle Studio TUS uploads without leaking Basic auth'
+    url: http://$STORAGE_HOST:5000/
+    routes:
+      - name: storage-v1-upload-resumable
+        strip_path: true
+        paths:
+          - /storage/v1/upload/resumable
+    plugins:
+      - name: cors
+      - name: basic-auth
+        config:
+          hide_credentials: true
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - apikey: $SUPABASE_SERVICE_KEY
+              - authorization: Bearer $SUPABASE_SERVICE_KEY
+
   - name: storage-v1
     _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
     url: http://$STORAGE_HOST:5000/
@@ -183,11 +203,6 @@ services:
           - /storage/v1/
     plugins:
       - name: cors
-      - name: request-transformer
-        config:
-          remove:
-            headers:
-              - authorization
 
   # ## Edge Functions routes
   # - name: functions-v1
