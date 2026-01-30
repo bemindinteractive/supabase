@@ -176,35 +176,6 @@ services:
             - admin
             - anon
   ## Storage routes: the storage server manages its own auth
-  # NOTE: When Studio is served from the same public Kong hostname,
-  # browsers attach `Authorization: Basic ...` to XHR requests.
-  # Storage interprets that as a JWT and fails with `Invalid Compact JWS`.
-  # This route authenticates with Basic at Kong, strips the Basic credentials,
-  # then injects the service-role token for Storage.
-  - name: storage-v1-upload-resumable
-    _comment: 'Storage: /storage/v1/upload/resumable -> http://storage:5000/upload/resumable (Studio upload)'
-    url: http://$STORAGE_HOST:5000/upload/resumable
-    routes:
-      - name: storage-v1-upload-resumable
-        strip_path: true
-        paths:
-          - /storage/v1/upload/resumable
-    plugins:
-      - name: cors
-      - name: basic-auth
-        config:
-          hide_credentials: true
-      - name: request-transformer
-        config:
-          remove:
-            headers:
-              - authorization
-              - apikey
-          add:
-            headers:
-              - "apikey:$SUPABASE_SERVICE_KEY"
-              - "authorization: Bearer $SUPABASE_SERVICE_KEY"
-
   - name: storage-v1
     _comment: 'Storage: /storage/v1/* -> http://storage:5000/*'
     url: http://$STORAGE_HOST:5000/
